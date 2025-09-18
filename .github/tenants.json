@@ -1,0 +1,56 @@
+{
+  "include": [
+    {
+      "name": "acme-corp",
+      "database": "acme_production_db",
+      "api_url": "https://api.acme-corp.com",
+      "region": "us-east-1",
+      "environment": "production",
+      "port": "3001",
+      "features": {
+        "analytics": true,
+        "premium_support": true,
+        "custom_branding": true
+      }
+    },
+    {
+      "name": "beta-solutions",
+      "database": "beta_production_db", 
+      "api_url": "https://api.beta-solutions.com",
+      "region": "eu-west-1",
+      "environment": "production",
+      "port": "3002",
+      "features": {
+        "analytics": true,
+        "premium_support": false,
+        "custom_branding": true
+      }
+    },
+    {
+      "name": "startup-demo",
+      "database": "startup_staging_db",
+      "api_url": "https://api.startup-demo.com",
+      "region": "us-west-2",
+      "environment": "staging",
+      "port": "3003",
+      "features": {
+        "analytics": false,
+        "premium_support": false,
+        "custom_branding": false
+      }
+    },
+    {
+      "name": "enterprise-client",
+      "database": "enterprise_production_db",
+      "api_url": "https://api.enterprise-client.com",
+      "region": "ap-southeast-1",
+      "environment": "production", 
+      "port": "3004",
+      "features": {
+        "analytics": true,
+        "premium_support": true,
+        "custom_branding": true
+      }
+    }
+  ]
+}

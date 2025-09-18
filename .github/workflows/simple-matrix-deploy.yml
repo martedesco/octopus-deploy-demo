@@ -1,0 +1,92 @@
+name: 🚀 Simple Matrix Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: 🧪 Run tests
+        run: npm test
+      
+      - name: 🏗️ Build application
+        run: npm run build
+
+  deploy:
+    name: 🚀 Deploy to Tenants
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        tenant: [acme-corp, beta-solutions, startup-demo]
+        environment: [staging, production]
+        exclude:
+          # Don't deploy startup-demo to production
+          - tenant: startup-demo
+            environment: production
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: 🏗️ Build application
+        run: npm run build
+      
+      - name: 🚀 Deploy to ${{ matrix.tenant }} - ${{ matrix.environment }}
+        run: |
+          echo "🏗️ Deploying to tenant: ${{ matrix.tenant }}"
+          echo "🌍 Environment: ${{ matrix.environment }}"
+          echo "⏰ Deployment time: $(date)"
+          
+          # Simulate deployment process
+          echo "📦 Preparing deployment package..."
+          sleep 2
+          
+          echo "🔧 Configuring tenant-specific settings..."
+          sleep 1
+          
+          echo "📤 Uploading to ${{ matrix.tenant }} servers..."
+          sleep 3
+          
+          echo "✅ Deployment completed successfully!"
+          echo "🔗 Application URL: https://${{ matrix.tenant }}-${{ matrix.environment }}.example.com"
+        
+        env:
+          TENANT_ID: ${{ matrix.tenant }}
+          ENVIRONMENT: ${{ matrix.environment }}
+          DATABASE_URL: ${{ matrix.tenant }}_${{ matrix.environment }}_db
+          API_URL: https://api.${{ matrix.tenant }}.com
+      
+      - name: 🔍 Post-deployment verification
+        run: |
+          echo "🔍 Running health checks for ${{ matrix.tenant }}..."
+          echo "✅ Health check passed"
+          echo "📊 Performance metrics collected"
+          echo "🔔 Notifications sent"

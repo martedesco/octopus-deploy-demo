@@ -1,0 +1,211 @@
+name: 🎯 Dynamic Multi-Tenant Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenants:
+        description: 'Specific tenants (comma-separated) or "all"'
+        required: false
+        default: 'all'
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      skip_tests:
+        description: 'Skip tests (for emergency deployments)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  setup:
+    name: 🔧 Setup Deployment Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      tenants: ${{ steps.tenants.outputs.matrix }}
+      deployment_count: ${{ steps.tenants.outputs.count }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🎯 Generate tenant matrix
+        id: tenants
+        run: |
+          if [ "${{ github.event.inputs.tenants }}" = "all" ]; then
+            echo "📋 Deploying to all tenants"
+            TENANTS=$(cat .github/tenants.json | jq -c .)
+            COUNT=$(cat .github/tenants.json | jq '.include | length')
+          else
+            echo "🎯 Deploying to specific tenants: ${{ github.event.inputs.tenants }}"
+            # Create filtered tenant list based on input
+            IFS=',' read -ra TENANT_ARRAY <<< "${{ github.event.inputs.tenants }}"
+            TENANTS='{"include":[]}'
+            COUNT=0
+            for tenant in "${TENANT_ARRAY[@]}"; do
+              tenant=$(echo $tenant | tr -d ' ')
+              TENANT_CONFIG=$(cat .github/tenants.json | jq ".include[] | select(.name == \"$tenant\")")
+              if [ ! -z "$TENANT_CONFIG" ]; then
+                TENANTS=$(echo $TENANTS | jq ".include += [$TENANT_CONFIG]")
+                COUNT=$((COUNT + 1))
+              fi
+            done
+          fi
+          
+          echo "matrix=$TENANTS" >> $GITHUB_OUTPUT
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          
+          echo "📊 Deployment Summary:"
+          echo "   Environment: ${{ github.event.inputs.environment }}"
+          echo "   Tenant Count: $COUNT"
+          echo "   Skip Tests: ${{ github.event.inputs.skip_tests }}"
+
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: 🧪 Run tests
+        run: npm test
+      
+      - name: 🏗️ Build application
+        run: npm run build
+
+  deploy:
+    name: 🚀 Deploy to ${{ matrix.name }}
+    needs: [setup, test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.tenants) }}
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📥 Install dependencies
+        run: npm ci
+      
+      - name: 🏗️ Build application
+        run: npm run build
+      
+      - name: 🔧 Configure tenant environment
+        run: |
+          echo "🔧 Setting up environment for ${{ matrix.name }}"
+          echo "TENANT_ID=${{ matrix.name }}" >> tenant.env
+          echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> tenant.env
+          echo "DATABASE_URL=${{ matrix.database }}" >> tenant.env
+          echo "API_URL=${{ matrix.api_url }}" >> tenant.env
+          echo "REGION=${{ matrix.region }}" >> tenant.env
+          echo "PORT=${{ matrix.port }}" >> tenant.env
+          
+          echo "📋 Tenant Configuration:"
+          cat tenant.env
+      
+      - name: 🚀 Deploy to ${{ matrix.name }}
+        run: |
+          source tenant.env
+          
+          echo "🚀 Starting deployment for ${{ matrix.name }}"
+          echo "🌍 Region: ${{ matrix.region }}"
+          echo "🏷️ Environment: ${{ github.event.inputs.environment }}"
+          echo "🗄️ Database: ${{ matrix.database }}"
+          
+          # Simulate pre-deployment checks
+          echo "🔍 Running pre-deployment checks..."
+          sleep 2
+          
+          # Simulate database migration (if needed)
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "🗄️ Running database migrations..."
+            sleep 3
+          fi
+          
+          # Simulate deployment
+          echo "📦 Deploying application..."
+          npm run deploy
+          sleep 4
+          
+          echo "✅ Deployment completed for ${{ matrix.name }}!"
+          echo "🔗 Application available at: ${{ matrix.api_url }}"
+        
+        env:
+          TENANT_CONFIG: ${{ toJson(matrix) }}
+      
+      - name: 🔍 Health check
+        run: |
+          echo "🔍 Performing health check for ${{ matrix.name }}..."
+          
+          # Simulate health check
+          if [ "${{ matrix.environment }}" = "production" ]; then
+            echo "🏥 Production health check (comprehensive)..."
+            sleep 3
+          else
+            echo "🏥 Staging health check (basic)..."
+            sleep 1
+          fi
+          
+          echo "✅ Health check passed for ${{ matrix.name }}"
+          echo "📊 Response time: $(shuf -i 50-200 -n 1)ms"
+          echo "💾 Memory usage: $(shuf -i 45-85 -n 1)%"
+          echo "🔢 Active connections: $(shuf -i 10-100 -n 1)"
+      
+      - name: 📢 Deployment notification
+        run: |
+          echo "📢 Sending deployment notification..."
+          echo "✅ ${{ matrix.name }} successfully deployed to ${{ github.event.inputs.environment }}"
+          echo "🕐 Completed at: $(date)"
+          
+          # Feature-specific notifications
+          if [ "${{ matrix.features.premium_support }}" = "true" ]; then
+            echo "🎯 Premium support team notified"
+          fi
+          
+          if [ "${{ matrix.features.analytics }}" = "true" ]; then
+            echo "📊 Analytics tracking enabled"
+          fi
+
+  summary:
+    name: 📋 Deployment Summary
+    needs: [setup, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📊 Generate deployment report
+        run: |
+          echo "## 🚀 Multi-Tenant Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Tenants:** ${{ needs.setup.outputs.deployment_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tests Skipped:** ${{ github.event.inputs.skip_tests }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "✅ **Status:** All deployments completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Some deployments failed" >> $GITHUB_STEP_SUMMARY
+          fi

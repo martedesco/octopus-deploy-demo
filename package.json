@@ -1,0 +1,33 @@
+{
+  "name": "multi-tenant-github-actions-demo",
+  "version": "1.0.0",
+  "description": "A comprehensive demo project showcasing multi-tenant deployment strategies using GitHub Actions",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "node test.js",
+    "build": "echo \"Building application...\" && mkdir -p dist && cp -r src/* dist/",
+    "deploy": "node scripts/deploy.js",
+    "health-check": "node scripts/health-check.js",
+    "dev": "nodemon src/app.js"
+  },
+  "keywords": [
+    "multi-tenant",
+    "github-actions",
+    "deployment",
+    "devops",
+    "ci-cd",
+    "demo"
+  ],
+  "author": "DevOps Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

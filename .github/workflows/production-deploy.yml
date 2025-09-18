@@ -21,6 +21,11 @@ on:
         required: false
         default: true
         type: boolean
+      test_mode:
+        description: 'Enable test mode (faster execution)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   validate:
@@ -202,20 +207,33 @@ jobs:
           # Backup (for production)
           if [ "${{ github.event.inputs.environment }}" = "production" ]; then
             echo "💾 Creating backup for ${{ matrix.name }}..."
-            sleep 2
+            if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+              sleep 1  # Fast backup in test mode
+            else
+              sleep 2  # Normal backup time
+            fi
             echo "✅ Backup created"
           fi
           
           # Database migrations
           if [ "${{ matrix.features.analytics }}" = "true" ]; then
             echo "📊 Running analytics database setup..."
-            sleep 1
+            if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+              sleep 0.5  # Fast migration in test mode
+            else
+              sleep 1
+            fi
           fi
           
           # Deploy application
           echo "📦 Deploying application to ${{ matrix.region }}..."
           npm run deploy
-          sleep $((RANDOM % 3 + 2))  # Random deployment time
+          
+          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+            sleep 1  # Fast deployment in test mode
+          else
+            sleep $((RANDOM % 3 + 2))  # Random deployment time
+          fi
           
           echo "✅ Application deployed successfully!"
           
@@ -229,7 +247,11 @@ jobs:
           
           # Health check
           echo "🏥 Health check..."
-          sleep 2
+          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+            sleep 1  # Fast health check in test mode
+          else
+            sleep 2
+          fi
           echo "   ✅ Application responding"
           echo "   ✅ Database connectivity"
           echo "   ✅ External API connectivity"
@@ -253,7 +275,11 @@ jobs:
           # Security check (production only)
           if [ "${{ github.event.inputs.environment }}" = "production" ]; then
             echo "🔒 Security verification..."
-            sleep 1
+            if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+              sleep 0.5  # Fast security check in test mode
+            else
+              sleep 1
+            fi
             echo "   ✅ SSL certificates valid"
             echo "   ✅ Security headers configured"
           fi
@@ -290,6 +316,8 @@ jobs:
           echo "- **Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Total Tenants:** ${{ needs.setup.outputs.deployment_count }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Production Tenants:** ${{ needs.setup.outputs.production_tenants }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Mode:** ${{ github.event.inputs.test_mode }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Approval Required:** ${{ github.event.inputs.approval_required }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Requested by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

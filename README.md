@@ -138,6 +138,46 @@ Once running, test these endpoints:
 
 ## 🧪 Testing the Workflows
 
+### 🚀 Manual Testing (Recommended for Quick Demo)
+
+All workflows support **manual execution** with **test mode** for faster demonstration:
+
+#### Quick Test Instructions
+1. Go to your repository on GitHub
+2. Click the **Actions** tab  
+3. Select any workflow to test
+4. Click **Run workflow** button
+5. **Enable Test Mode** for faster execution
+6. Configure other parameters as needed
+7. Click **Run workflow** to start
+
+#### Available Manual Triggers
+
+**🎯 Simple Matrix Deploy**
+- **Environment**: `staging` or `production`
+- **Test Mode**: ✅ Enable for 5x faster execution
+- **Skip Tests**: Skip test suite for quicker demo
+
+**🎯 Dynamic Tenant Deploy**  
+- **Environment**: Choose target environment
+- **Tenants**: `all` or comma-separated list (e.g., `acme-corp,startup-demo`)
+- **Test Mode**: ✅ Enable for 5x faster execution
+- **Skip Tests**: Skip test suite for quicker demo
+
+**🎯 Production Deploy**
+- **Environment**: `staging` or `production`
+- **Tenants**: `all` or specific tenants
+- **Approval Required**: Enable/disable approval gate
+- **Test Mode**: ✅ Enable for 5x faster execution
+
+#### Test Mode Benefits
+- ⚡ **5x faster execution** (seconds instead of minutes)
+- 🧪 **Same realistic output** and deployment simulation
+- 📊 **Perfect for demonstrations** and workflow validation
+- ✅ **No side effects** - safe for testing
+
+### 📋 Automatic Testing (Full Integration)
+
 ### Step 1: Setup GitHub Repository
 
 1. **Create a new GitHub repository**

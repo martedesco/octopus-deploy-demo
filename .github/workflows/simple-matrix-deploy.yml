@@ -3,7 +3,26 @@ name: 🚀 Simple Matrix Deployment
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - '.github/workflows/simple-matrix-deploy.yml'
   workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Override deployment environment'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+        - auto
+        - staging
+        - production
+      test_mode:
+        description: 'Run in test mode (faster execution)'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   test:
@@ -32,7 +51,6 @@ jobs:
     name: 🚀 Deploy to Tenants
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
@@ -59,34 +77,98 @@ jobs:
       - name: 🏗️ Build application
         run: npm run build
       
-      - name: 🚀 Deploy to ${{ matrix.tenant }} - ${{ matrix.environment }}
+      - name: � Configure deployment environment
+        id: deploy-config
+        run: |
+          if [ "${{ github.event.inputs.deploy_environment }}" = "auto" ] || [ "${{ github.event.inputs.deploy_environment }}" = "" ]; then
+            DEPLOY_ENV="${{ matrix.environment }}"
+          else
+            DEPLOY_ENV="${{ github.event.inputs.deploy_environment }}"
+          fi
+          
+          echo "deployment_env=$DEPLOY_ENV" >> $GITHUB_OUTPUT
+          echo "🎯 Using deployment environment: $DEPLOY_ENV"
+          echo "🧪 Test mode enabled: ${{ github.event.inputs.test_mode }}"
+      
+      - name: 🚀 Deploy to ${{ matrix.tenant }} - ${{ steps.deploy-config.outputs.deployment_env }}
         run: |
           echo "🏗️ Deploying to tenant: ${{ matrix.tenant }}"
-          echo "🌍 Environment: ${{ matrix.environment }}"
+          echo "🌍 Environment: ${{ steps.deploy-config.outputs.deployment_env }}"
           echo "⏰ Deployment time: $(date)"
+          echo "🧪 Test mode: ${{ github.event.inputs.test_mode }}"
           
-          # Simulate deployment process
-          echo "📦 Preparing deployment package..."
-          sleep 2
-          
-          echo "🔧 Configuring tenant-specific settings..."
-          sleep 1
-          
-          echo "📤 Uploading to ${{ matrix.tenant }} servers..."
-          sleep 3
+          # Simulate deployment process with faster timing in test mode
+          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+            echo "📦 Preparing deployment package (test mode - faster)..."
+            sleep 1
+            
+            echo "🔧 Configuring tenant-specific settings..."
+            sleep 1
+            
+            echo "📤 Uploading to ${{ matrix.tenant }} servers..."
+            sleep 1
+          else
+            echo "📦 Preparing deployment package..."
+            sleep 2
+            
+            echo "🔧 Configuring tenant-specific settings..."
+            sleep 1
+            
+            echo "📤 Uploading to ${{ matrix.tenant }} servers..."
+            sleep 3
+          fi
           
           echo "✅ Deployment completed successfully!"
-          echo "🔗 Application URL: https://${{ matrix.tenant }}-${{ matrix.environment }}.example.com"
+          echo "🔗 Application URL: https://${{ matrix.tenant }}-${{ steps.deploy-config.outputs.deployment_env }}.example.com"
         
         env:
           TENANT_ID: ${{ matrix.tenant }}
-          ENVIRONMENT: ${{ matrix.environment }}
-          DATABASE_URL: ${{ matrix.tenant }}_${{ matrix.environment }}_db
+          ENVIRONMENT: ${{ steps.deploy-config.outputs.deployment_env }}
+          DATABASE_URL: ${{ matrix.tenant }}_${{ steps.deploy-config.outputs.deployment_env }}_db
           API_URL: https://api.${{ matrix.tenant }}.com
       
       - name: 🔍 Post-deployment verification
         run: |
           echo "🔍 Running health checks for ${{ matrix.tenant }}..."
+          
+          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+            sleep 1
+          else
+            sleep 2
+          fi
+          
           echo "✅ Health check passed"
           echo "📊 Performance metrics collected"
           echo "🔔 Notifications sent"
+          
+          # Show some mock metrics
+          echo "📈 Response time: $(shuf -i 45-120 -n 1)ms"
+          echo "💾 Memory usage: $(shuf -i 40-75 -n 1)%"
+          echo "🔢 Active connections: $(shuf -i 15-85 -n 1)"
+
+  summary:
+    name: 📋 Deployment Summary
+    needs: [test, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📊 Generate deployment report
+        run: |
+          echo "## 🚀 Simple Matrix Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment Override:** ${{ github.event.inputs.deploy_environment || 'auto' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Mode:** ${{ github.event.inputs.test_mode || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "✅ **Status:** All deployments completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🎯 Deployed Tenants:" >> $GITHUB_STEP_SUMMARY
+            echo "- acme-corp" >> $GITHUB_STEP_SUMMARY
+            echo "- beta-solutions" >> $GITHUB_STEP_SUMMARY
+            echo "- startup-demo (staging only)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Some deployments failed" >> $GITHUB_STEP_SUMMARY
+          fi

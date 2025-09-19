@@ -12,9 +12,9 @@ This repository demonstrates **two key patterns** for deploying applications to 
 2. **Dynamic Tenant Deploy** - Selectively deploy to specific tenants with flexible configuration
 
 ### 🏢 Sample Tenants
-- **customer-a** (Production, US East)  
-- **customer-b** (Production, EU West)
-- **demo-tenant** (Staging, US West)
+- **acme-corp** (Staging + Production, US East)  
+- **beta-solutions** (Staging + Production, EU West)
+- **startup-demo** (Staging only, US West)
 
 ## 🧪 Quick Demo
 
@@ -27,13 +27,16 @@ This repository demonstrates **two key patterns** for deploying applications to 
 
 ### Available Workflows
 
-#### 🎯 **Matrix Strategy Deploy**
-- Deploys to all tenants using GitHub Actions matrix
-- **Parameters**: Environment, Test Mode
-- **Best for**: Coordinated releases across all tenants
+#### 🚀 **Simple Matrix Deploy** (Automatic + Manual)
+- **Triggers**: Automatic on push to main + Manual dispatch
+- **Deploys to**: All tenants using GitHub Actions matrix strategy
+- **Environment Override**: Choose specific environment (staging/production) or auto
+- **Parameters**: Environment Override, Test Mode
+- **Best for**: Regular deployments with environment filtering
 
-#### 🎯 **Dynamic Tenant Deploy**  
-- Deploy to specific tenants or all tenants
+#### 🎯 **Dynamic Tenant Deploy** (Manual Only)  
+- **Triggers**: Manual dispatch only
+- **Deploy to**: Specific tenants or all tenants
 - **Parameters**: Environment, Tenant Selection, Test Mode  
 - **Best for**: Selective deployments and tenant-specific releases
 
@@ -82,14 +85,13 @@ octopus-deploy-demo/
 
 ## 🎯 Mock Tenants
 
-The project includes 4 realistic tenant configurations:
+The project includes 3 realistic tenant configurations:
 
-| Tenant | Environment | Region | Features | Port |
+| Tenant | Environments | Region | Features | Port |
 |--------|-------------|--------|----------|------|
-| **acme-corp** | Production | us-east-1 | Analytics, Premium Support, Custom Branding | 3001 |
-| **beta-solutions** | Production | eu-west-1 | Analytics, Custom Branding | 3002 |
-| **startup-demo** | Staging | us-west-2 | Basic features only | 3003 |
-| **enterprise-client** | Production | ap-southeast-1 | All premium features | 3004 |
+| **acme-corp** | Staging + Production | us-east-1 | Analytics, Premium Support | 3001 |
+| **beta-solutions** | Staging + Production | eu-west-1 | Analytics | 3002 |
+| **startup-demo** | Staging only | us-west-2 | Basic features | 3003 |
 
 ## 🚀 Quick Start
 
@@ -140,40 +142,39 @@ Once running, test these endpoints:
 ### 1. Simple Matrix Deployment
 **File:** `.github/workflows/simple-matrix-deploy.yml`
 
-- **Trigger:** Automatic on push to main branch
-- **Strategy:** Basic matrix deployment across tenants and environments
-- **Best for:** Simple, uniform deployments
+- **Triggers:** Automatic on push to main branch + Manual workflow dispatch
+- **Strategy:** Matrix deployment across tenants and environments with override capability
+- **Best for:** Regular deployments with environment filtering
 
 **Features:**
-- Runs tests before deployment
-- Deploys to multiple tenants simultaneously
-- Excludes staging tenants from production
+- ✅ Runs tests before deployment
+- ✅ Deploys to multiple tenants simultaneously  
+- ✅ **Environment Override:** Choose specific environment (staging/production) or auto
+- ✅ **Smart filtering:** When override is selected, skips non-matching environments
+- ✅ **Clear summary:** Shows which deployments ran vs. skipped
 
-### 2. Dynamic Tenant Deployment
+**Environment Override Examples:**
+- `auto` → Deploys all: acme-corp (staging+production), beta-solutions (staging+production), startup-demo (staging)
+- `staging` → Deploys only: acme-corp (staging), beta-solutions (staging), startup-demo (staging) 
+- `production` → Deploys only: acme-corp (production), beta-solutions (production)
+
+### 2. Dynamic Tenant Deployment  
 **File:** `.github/workflows/dynamic-tenant-deploy.yml`
 
-- **Trigger:** Manual workflow dispatch
+- **Triggers:** Manual workflow dispatch only
 - **Strategy:** Dynamic tenant selection with flexible configuration
 - **Best for:** Selective deployments and testing scenarios
 
 **Configuration Options:**
-- **Tenants:** `all` or specific tenants (e.g., `acme-corp,beta-solutions`)
-- **Environment:** `staging` or `production`
-- **Skip tests:** For emergency deployments
+- **Tenants:** `all` or specific tenants (e.g., `acme-corp`, `[beta-solutions]`, `acme-corp,startup-demo`)
+- **Environment:** `staging` or `production` 
+- **Test Mode:** Enable for faster execution
 
-### 3. Production Deployment
-**File:** `.github/workflows/production-deploy.yml`
-
-- **Trigger:** Manual workflow dispatch
-- **Strategy:** Production-ready with comprehensive safety checks
-- **Best for:** Production deployments with approval gates
-
-**Features:**
-- Pre-deployment validation
-- Optional manual approval for production
-- Comprehensive health checks
-- Detailed deployment reporting
-- Post-deployment cleanup
+**Tenant Input Examples:**
+- `all` → Deploy to all available tenants
+- `acme-corp` → Deploy to acme-corp only
+- `[acme-corp]` → Deploy to acme-corp only (supports brackets)
+- `acme-corp,beta-solutions` → Deploy to multiple specific tenants
 
 ## 🧪 Testing the Workflows
 
@@ -192,22 +193,19 @@ All workflows support **manual execution** with **test mode** for faster demonst
 
 #### Available Manual Triggers
 
-**🎯 Simple Matrix Deploy**
-- **Environment**: `staging` or `production`
+**🚀 Simple Matrix Deploy**
+- **Environment Override**: `auto`, `staging`, or `production`
 - **Test Mode**: ✅ Enable for 5x faster execution
-- **Skip Tests**: Skip test suite for quicker demo
+- **How it works**: 
+  - `auto` → Deploys to all tenant/environment combinations
+  - `staging` → Only deploys staging environments (skips production)
+  - `production` → Only deploys production environments (skips staging)
 
 **🎯 Dynamic Tenant Deploy**  
-- **Environment**: Choose target environment
-- **Tenants**: `all` or comma-separated list (e.g., `acme-corp,startup-demo`)
+- **Environment**: Choose target environment (`staging` or `production`)
+- **Tenants**: `all` or specific tenants (e.g., `acme-corp`, `[beta-solutions]`, `acme-corp,startup-demo`)
 - **Test Mode**: ✅ Enable for 5x faster execution
-- **Skip Tests**: Skip test suite for quicker demo
-
-**🎯 Production Deploy**
-- **Environment**: `staging` or `production`
-- **Tenants**: `all` or specific tenants
-- **Approval Required**: Enable/disable approval gate
-- **Test Mode**: ✅ Enable for 5x faster execution
+- **How it works**: Deploy only to selected tenants in chosen environment
 
 #### Test Mode Benefits
 - ⚡ **5x faster execution** (seconds instead of minutes)
@@ -232,7 +230,7 @@ All workflows support **manual execution** with **test mode** for faster demonst
 
 ### Step 2: Test Simple Matrix Deployment
 
-1. **Make any change to trigger the workflow:**
+1. **Automatic trigger - Make any change to trigger the workflow:**
    ```bash
    echo "# Test change" >> README.md
    git add README.md
@@ -240,13 +238,21 @@ All workflows support **manual execution** with **test mode** for faster demonst
    git push
    ```
 
-2. **Check the Actions tab** in your GitHub repository
-3. **Watch the workflow run automatically**
+2. **Manual trigger - Test environment override:**
+   - Go to **Actions** tab → **Simple Matrix Deploy**
+   - Click **"Run workflow"**
+   - **Try different environment overrides:**
+     - `auto` → Deploys to all environments
+     - `staging` → Only staging deployments  
+     - `production` → Only production deployments
+
+3. **Check the Actions tab** in your GitHub repository
+4. **Watch the workflow run** and see environment filtering in action
 
 ### Step 3: Test Dynamic Deployment
 
 1. Go to **Actions** tab in GitHub
-2. Select **"🎯 Dynamic Multi-Tenant Deployment"**
+2. Select **"🎯 Multi-Tenant Deploy (Dynamic Selection)"**
 3. Click **"Run workflow"**
 4. **Try different configurations:**
 
@@ -255,40 +261,46 @@ All workflows support **manual execution** with **test mode** for faster demonst
 # Deploy all tenants to staging
 Tenants: all
 Environment: staging
-Skip tests: false
+Test Mode: true
 
-# Deploy specific tenants
-Tenants: acme-corp,startup-demo
-Environment: staging
-Skip tests: false
+# Deploy specific tenant with brackets
+Tenants: [acme-corp]
+Environment: staging  
+Test Mode: true
 
-# Emergency deployment
+# Deploy multiple specific tenants
+Tenants: acme-corp,beta-solutions
+Environment: production
+Test Mode: true
+
+# Deploy single tenant to production
 Tenants: acme-corp
 Environment: production
-Skip tests: true
+Test Mode: true
 ```
 
-### Step 4: Test Production Workflow
+### Step 4: Watch the Results
 
-1. Go to **Actions** tab
-2. Select **"🏭 Production Multi-Tenant Deployment"**
-3. **Configure for production:**
-   ```yaml
-   Environment: production
-   Tenants: all
-   Approval required: true
-   ```
+**Simple Matrix Deploy will show:**
+- 🎯 **Environment filtering in action** - See which deployments run vs. skip
+- 📋 **Clear summary** showing deployed vs. skipped tenants
+- ⚡ **Parallel execution** across multiple tenants
+
+**Dynamic Tenant Deploy will show:**
+- 🎯 **Selective tenant deployment** based on your input
+- 🔍 **Tenant lookup and validation** 
+- 📊 **Flexible environment targeting**
 
 ## 📊 Expected Results
 
 Each workflow demonstrates:
 
 - ✅ **Pre-deployment validation** - Configuration and application checks
-- 🏗️ **Application building** - NPM install and build process
+- 🏗️ **Application building** - NPM install and build process  
 - 🚀 **Multi-tenant deployment** - Realistic deployment simulation per tenant
 - 🔍 **Health checks** - Post-deployment verification
-- 📊 **Deployment reporting** - Comprehensive status and metrics
-- 📢 **Notifications** - Tenant-specific completion messages
+- 📊 **Deployment reporting** - Comprehensive status and metrics with skip/deploy details
+- 📢 **Smart summaries** - Clear visibility into what ran vs. what was skipped
 
 ### Sample Output
 
@@ -328,17 +340,17 @@ Edit `.github/tenants.json`:
       "database": "new_customer_db",
       "api_url": "https://api.new-customer.com",
       "region": "us-west-1",
-      "environment": "production",
       "port": "3005",
       "features": {
         "analytics": true,
-        "premium_support": false,
-        "custom_branding": true
+        "premium_support": false
       }
     }
   ]
 }
 ```
+
+**Note:** The environment (staging/production) is determined dynamically by the workflow, not stored in tenant config.
 
 ### Environment Variables
 
@@ -362,11 +374,6 @@ Add these repository secrets in GitHub:
 ACME_CORP_API_KEY=your-api-key-here
 BETA_SOLUTIONS_API_KEY=your-api-key-here
 STARTUP_DEMO_API_KEY=your-api-key-here
-ENTERPRISE_CLIENT_API_KEY=your-api-key-here
-
-# Environment-specific secrets
-ACME_CORP_PRODUCTION_API_KEY=prod-key-here
-ACME_CORP_STAGING_API_KEY=staging-key-here
 ```
 
 ## 📈 Monitoring and Reporting

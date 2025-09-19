@@ -251,3 +251,29 @@ jobs:
           else
             echo "❌ **Status:** Some deployments failed" >> $GITHUB_STEP_SUMMARY
           fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Deployed Tenants:" >> $GITHUB_STEP_SUMMARY
+          
+          # Extract tenant names from the matrix that was used
+          TENANTS_MATRIX='${{ needs.setup.outputs.tenants }}'
+          if [ "$TENANTS_MATRIX" != "" ] && [ "$TENANTS_MATRIX" != "null" ]; then
+            # Use jq to extract tenant names and format them
+            echo "$TENANTS_MATRIX" | jq -r '.include[].name' | while read tenant; do
+              if [ ! -z "$tenant" ]; then
+                echo "- **$tenant** (${{ github.event.inputs.environment }})" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+          else
+            echo "- No tenants were deployed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Configuration Details:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Input Tenants:** \`${{ github.event.inputs.tenants }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target Environment:** \`${{ github.event.inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+          
+          # Show environment-specific filtering if applicable
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "- **Note:** startup-demo excluded from production deployments" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,28 +1,37 @@
 {
   "include": [
     {
-      "name": "customer-a",
-      "database": "customer_a_db",
-      "api_url": "https://customer-a.yourdomain.com",
+      "name": "acme-corp",
+      "database": "acme_corp_db",
+      "api_url": "https://acme-corp.yourdomain.com",
       "region": "us-east-1",
-      "environment": "production",
-      "port": "3001"
+      "port": "3001",
+      "features": {
+        "premium_support": true,
+        "analytics": true
+      }
     },
     {
-      "name": "customer-b",
-      "database": "customer_b_db", 
-      "api_url": "https://customer-b.yourdomain.com",
+      "name": "beta-solutions",
+      "database": "beta_solutions_db", 
+      "api_url": "https://beta-solutions.yourdomain.com",
       "region": "eu-west-1",
-      "environment": "production",
-      "port": "3002"
+      "port": "3002",
+      "features": {
+        "premium_support": false,
+        "analytics": true
+      }
     },
     {
-      "name": "demo-tenant",
-      "database": "demo_staging_db",
-      "api_url": "https://demo.yourdomain.com",
+      "name": "startup-demo",
+      "database": "startup_demo_db",
+      "api_url": "https://startup-demo.yourdomain.com",
       "region": "us-west-2",
-      "environment": "staging",
-      "port": "3003"
+      "port": "3003",
+      "features": {
+        "premium_support": false,
+        "analytics": false
+      }
     }
   ]
 }

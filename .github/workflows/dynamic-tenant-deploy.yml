@@ -52,13 +52,27 @@ jobs:
             TENANTS='{"include":[]}'
             COUNT=0
             for tenant in "${TENANT_ARRAY[@]}"; do
-              tenant=$(echo $tenant | tr -d ' ')
+              tenant=$(echo $tenant | tr -d ' ' | tr -d '[' | tr -d ']')
               TENANT_CONFIG=$(cat .github/tenants.json | jq ".include[] | select(.name == \"$tenant\")")
-              if [ ! -z "$TENANT_CONFIG" ]; then
+              if [ ! -z "$TENANT_CONFIG" ] && [ "$TENANT_CONFIG" != "null" ]; then
                 TENANTS=$(echo $TENANTS | jq ".include += [$TENANT_CONFIG]")
                 COUNT=$((COUNT + 1))
+              else
+                echo "⚠️ Warning: Tenant '$tenant' not found in configuration"
               fi
             done
+          fi
+          
+          # Environment filtering logic - only deploy to staging if tenant supports it
+          if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            echo "🎯 Filtering tenants for staging environment"
+            # For staging, we deploy all tenants (they all support staging)
+            # No additional filtering needed
+          elif [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "🎯 Filtering tenants for production environment" 
+            # For production, exclude startup-demo
+            TENANTS=$(echo $TENANTS | jq '{include: [.include[] | select(.name != "startup-demo")]}')
+            COUNT=$(echo $TENANTS | jq '.include | length')
           fi
           
           echo "matrix=$TENANTS" >> $GITHUB_OUTPUT
@@ -68,6 +82,7 @@ jobs:
           echo "   Environment: ${{ github.event.inputs.environment }}"
           echo "   Tenant Count: $COUNT"
           echo "   Test Mode: ${{ github.event.inputs.test_mode }}"
+          echo "   Generated Matrix: $TENANTS"
 
   test:
     name: 🧪 Run Tests
@@ -176,7 +191,7 @@ jobs:
           echo "🔍 Performing health check for ${{ matrix.name }}..."
           
           # Simulate health check
-          if [ "${{ matrix.environment }}" = "production" ]; then
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
             echo "🏥 Production health check (comprehensive)..."
             if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
               sleep 1

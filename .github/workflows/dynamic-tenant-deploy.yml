@@ -41,48 +41,68 @@ jobs:
       - name: 🎯 Generate tenant matrix
         id: tenants
         run: |
+          # Read the base tenant configuration
+          BASE_TENANTS=$(cat .github/tenants.json)
+          
           if [ "${{ github.event.inputs.tenants }}" = "all" ]; then
             echo "📋 Deploying to all tenants"
-            TENANTS=$(cat .github/tenants.json | jq -c .)
-            COUNT=$(cat .github/tenants.json | jq '.include | length')
+            TENANTS="$BASE_TENANTS"
           else
             echo "🎯 Deploying to specific tenants: ${{ github.event.inputs.tenants }}"
             # Create filtered tenant list based on input
-            IFS=',' read -ra TENANT_ARRAY <<< "${{ github.event.inputs.tenants }}"
-            TENANTS='{"include":[]}'
-            COUNT=0
+            INPUT_TENANTS="${{ github.event.inputs.tenants }}"
+            # Clean up the input - remove brackets, spaces, and split by comma
+            CLEAN_INPUT=$(echo "$INPUT_TENANTS" | tr -d '[]' | tr -d ' ')
+            IFS=',' read -ra TENANT_ARRAY <<< "$CLEAN_INPUT"
+            
+            # Start with empty include array
+            FILTERED_TENANTS='{"include":[]}'
+            
             for tenant in "${TENANT_ARRAY[@]}"; do
-              tenant=$(echo $tenant | tr -d ' ' | tr -d '[' | tr -d ']')
-              TENANT_CONFIG=$(cat .github/tenants.json | jq ".include[] | select(.name == \"$tenant\")")
-              if [ ! -z "$TENANT_CONFIG" ] && [ "$TENANT_CONFIG" != "null" ]; then
-                TENANTS=$(echo $TENANTS | jq ".include += [$TENANT_CONFIG]")
-                COUNT=$((COUNT + 1))
-              else
-                echo "⚠️ Warning: Tenant '$tenant' not found in configuration"
+              if [ ! -z "$tenant" ]; then
+                echo "🔍 Looking for tenant: $tenant"
+                TENANT_CONFIG=$(echo "$BASE_TENANTS" | jq ".include[] | select(.name == \"$tenant\")")
+                if [ ! -z "$TENANT_CONFIG" ] && [ "$TENANT_CONFIG" != "null" ]; then
+                  echo "✅ Found tenant: $tenant"
+                  FILTERED_TENANTS=$(echo "$FILTERED_TENANTS" | jq ".include += [$TENANT_CONFIG]")
+                else
+                  echo "⚠️ Warning: Tenant '$tenant' not found in configuration"
+                fi
               fi
             done
+            
+            TENANTS="$FILTERED_TENANTS"
           fi
           
-          # Environment filtering logic - only deploy to staging if tenant supports it
-          if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
-            echo "🎯 Filtering tenants for staging environment"
-            # For staging, we deploy all tenants (they all support staging)
-            # No additional filtering needed
-          elif [ "${{ github.event.inputs.environment }}" = "production" ]; then
-            echo "🎯 Filtering tenants for production environment" 
-            # For production, exclude startup-demo
-            TENANTS=$(echo $TENANTS | jq '{include: [.include[] | select(.name != "startup-demo")]}')
-            COUNT=$(echo $TENANTS | jq '.include | length')
+          # Environment filtering logic
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "🎯 Filtering tenants for production environment (excluding startup-demo)"
+            TENANTS=$(echo "$TENANTS" | jq '{include: [.include[] | select(.name != "startup-demo")]}')
+          else
+            echo "🎯 Using tenants for staging environment (all tenants supported)"
           fi
           
-          echo "matrix=$TENANTS" >> $GITHUB_OUTPUT
+          # Count the final tenant list
+          COUNT=$(echo "$TENANTS" | jq '.include | length')
+          
+          # Ensure we have at least one tenant
+          if [ "$COUNT" -eq 0 ]; then
+            echo "❌ Error: No valid tenants found for deployment"
+            echo "Available tenants: $(echo "$BASE_TENANTS" | jq -r '.include[].name' | tr '\n' ' ')"
+            exit 1
+          fi
+          
+          # Compact the JSON for output
+          TENANTS_COMPACT=$(echo "$TENANTS" | jq -c .)
+          
+          echo "matrix=$TENANTS_COMPACT" >> $GITHUB_OUTPUT
           echo "count=$COUNT" >> $GITHUB_OUTPUT
           
           echo "📊 Deployment Summary:"
           echo "   Environment: ${{ github.event.inputs.environment }}"
           echo "   Tenant Count: $COUNT"
           echo "   Test Mode: ${{ github.event.inputs.test_mode }}"
-          echo "   Generated Matrix: $TENANTS"
+          echo "   Generated Matrix: $TENANTS_COMPACT"
 
   test:
     name: 🧪 Run Tests
@@ -109,7 +129,7 @@ jobs:
   deploy:
     name: 🚀 Deploy to ${{ matrix.name }}
     needs: [setup, test]
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped') && needs.setup.outputs.deployment_count != '0'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

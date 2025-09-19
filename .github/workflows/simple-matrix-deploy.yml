@@ -164,13 +164,41 @@ jobs:
           echo "**Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
+          # Determine which deployments ran and which were skipped
+          OVERRIDE="${{ github.event.inputs.deploy_environment || 'auto' }}"
+          
           if [ "${{ needs.deploy.result }}" = "success" ]; then
-            echo "✅ **Status:** All deployments completed successfully" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🎯 Deployed Tenants:" >> $GITHUB_STEP_SUMMARY
-            echo "- acme-corp" >> $GITHUB_STEP_SUMMARY
-            echo "- beta-solutions" >> $GITHUB_STEP_SUMMARY
-            echo "- startup-demo (staging only)" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Status:** All targeted deployments completed successfully" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Status:** Some deployments failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$OVERRIDE" = "staging" ]; then
+            echo "### 🎯 Deployed:" >> $GITHUB_STEP_SUMMARY
+            echo "- acme-corp (staging)" >> $GITHUB_STEP_SUMMARY
+            echo "- beta-solutions (staging)" >> $GITHUB_STEP_SUMMARY
+            echo "- startup-demo (staging)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⏭️ Skipped:" >> $GITHUB_STEP_SUMMARY
+            echo "- acme-corp (production) - environment override" >> $GITHUB_STEP_SUMMARY
+            echo "- beta-solutions (production) - environment override" >> $GITHUB_STEP_SUMMARY
+          elif [ "$OVERRIDE" = "production" ]; then
+            echo "### 🎯 Deployed:" >> $GITHUB_STEP_SUMMARY
+            echo "- acme-corp (production)" >> $GITHUB_STEP_SUMMARY
+            echo "- beta-solutions (production)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⏭️ Skipped:" >> $GITHUB_STEP_SUMMARY
+            echo "- acme-corp (staging) - environment override" >> $GITHUB_STEP_SUMMARY
+            echo "- beta-solutions (staging) - environment override" >> $GITHUB_STEP_SUMMARY
+            echo "- startup-demo (staging) - environment override" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### 🎯 Deployed:" >> $GITHUB_STEP_SUMMARY
+            echo "- acme-corp (staging & production)" >> $GITHUB_STEP_SUMMARY
+            echo "- beta-solutions (staging & production)" >> $GITHUB_STEP_SUMMARY
+            echo "- startup-demo (staging only)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⏭️ Skipped:" >> $GITHUB_STEP_SUMMARY
+            echo "- startup-demo (production) - excluded by matrix" >> $GITHUB_STEP_SUMMARY
           fi

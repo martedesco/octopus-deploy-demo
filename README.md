@@ -1,21 +1,60 @@
-# 🚀 Multi-Tenant GitHub Actions Demo
+# Multi-Tenant GitHub Actions Demo
 
-[![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+> **A simple demonstration of multi-tenant deployment strategies using GitHub Actions**
 
-> **A complete demonstration of multi-tenant deployment strategies using GitHub Actions**
+## 🎯 What This Demo Shows
 
-## 📋 Overview
+This repository demonstrates **two key patterns** for deploying applications to multiple tenants using GitHub Actions - replacing traditional Octopus Deploy tenant functionality.
 
-This project demonstrates how to replicate Octopus Deploy's multi-tenant functionality using GitHub Actions. It showcases three different deployment strategies with a real Node.js application and realistic deployment scenarios.
+### 🚀 Deployment Patterns
 
-**Key Features:**
-- 🏗️ Multi-tenant Node.js application with tenant-aware configuration
-- 🎯 Three different GitHub Actions workflow patterns
-- 📊 Mock deployment scripts with realistic timing
-- 🔧 Comprehensive tenant configuration management
-- 📈 Deployment reporting and health checks
+1. **Matrix Strategy Deploy** - Deploy to all tenants simultaneously using GitHub Actions matrix
+2. **Dynamic Tenant Deploy** - Selectively deploy to specific tenants with flexible configuration
+
+### 🏢 Sample Tenants
+- **customer-a** (Production, US East)  
+- **customer-b** (Production, EU West)
+- **demo-tenant** (Staging, US West)
+
+## 🧪 Quick Demo
+
+### Manual Testing (Recommended)
+1. **Go to your repository** → **Actions** tab
+2. **Select a workflow** to test
+3. **Click "Run workflow"**
+4. **Enable "Test Mode"** for faster execution ⚡
+5. **Configure parameters** and click "Run workflow"
+
+### Available Workflows
+
+#### 🎯 **Matrix Strategy Deploy**
+- Deploys to all tenants using GitHub Actions matrix
+- **Parameters**: Environment, Test Mode
+- **Best for**: Coordinated releases across all tenants
+
+#### 🎯 **Dynamic Tenant Deploy**  
+- Deploy to specific tenants or all tenants
+- **Parameters**: Environment, Tenant Selection, Test Mode  
+- **Best for**: Selective deployments and tenant-specific releases
+
+## ✨ Key Benefits vs Octopus Deploy
+
+- ✅ **No additional infrastructure** - Uses GitHub's native CI/CD
+- ✅ **Built-in matrix strategy** - Deploy to multiple environments simultaneously  
+- ✅ **Dynamic tenant selection** - Flexible deployment targeting
+- ✅ **Integration with source control** - Deployments triggered by code changes
+- ✅ **Cost effective** - No separate deployment server required
+
+## 🚀 Demo Notes
+
+- **Test Mode** reduces execution time from minutes to seconds
+- **Matrix strategy** shows parallel multi-tenant deployments
+- **Dynamic selection** demonstrates flexible tenant targeting
+- All deployments are simulated - safe for demonstration
+
+---
+
+*This demo shows how GitHub Actions can replace Octopus Deploy for multi-tenant deployments with simpler configuration and better integration.*
 
 ## 🏗️ Project Structure
 

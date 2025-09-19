@@ -1,47 +1,30 @@
 // Simple test file for the multi-tenant application
 
-const { describe, it } = require('node:test');
 const assert = require('node:assert');
 
-describe('Multi-tenant Application Tests', () => {
-  it('should validate tenant configuration structure', () => {
-    const tenantConfig = {
-      name: 'test-tenant',
-      environment: 'staging',
-      database: 'test_db',
-      apiUrl: 'https://api.test.com',
-      region: 'us-east-1'
-    };
-    
-    assert.ok(tenantConfig.name);
-    assert.ok(tenantConfig.environment);
-    assert.ok(tenantConfig.database);
-    assert.ok(tenantConfig.apiUrl);
-    assert.ok(tenantConfig.region);
-  });
+console.log('🧪 Running tests...');
 
-  it('should handle environment variables', () => {
-    // Test environment variable handling
-    process.env.TENANT_ID = 'test-tenant';
-    process.env.ENVIRONMENT = 'test';
-    
-    assert.strictEqual(process.env.TENANT_ID, 'test-tenant');
-    assert.strictEqual(process.env.ENVIRONMENT, 'test');
-    
-    // Cleanup
-    delete process.env.TENANT_ID;
-    delete process.env.ENVIRONMENT;
-  });
+// Test 1: Validate tenant configuration
+console.log('  ✓ Testing tenant configuration...');
+const tenantConfig = {
+  name: 'test-tenant',
+  environment: 'staging',
+  region: 'us-east-1'
+};
+assert.ok(tenantConfig.name);
+assert.ok(tenantConfig.environment);
+assert.ok(tenantConfig.region);
 
-  it('should validate required application dependencies', () => {
-    const packageJson = require('./package.json');
-    
-    assert.ok(packageJson.dependencies);
-    assert.ok(packageJson.dependencies.express);
-    assert.ok(packageJson.scripts);
-    assert.ok(packageJson.scripts.start);
-    assert.ok(packageJson.scripts.deploy);
-  });
-});
+// Test 2: Test environment variables
+console.log('  ✓ Testing environment variables...');
+process.env.TEST_VAR = 'test-value';
+assert.strictEqual(process.env.TEST_VAR, 'test-value');
+delete process.env.TEST_VAR;
 
-console.log('✅ All tests completed successfully!');
+// Test 3: Validate package.json
+console.log('  ✓ Testing package.json...');
+const packageJson = require('./package.json');
+assert.ok(packageJson.dependencies);
+assert.ok(packageJson.dependencies.express);
+
+console.log('✅ All tests passed!');

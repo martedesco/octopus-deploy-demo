@@ -1,13 +1,13 @@
-name: 🎯 Dynamic Multi-Tenant Deployment
+name: 🎯 Multi-Tenant Deploy (Dynamic Selection)
 
 on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - '.github/workflows/dynamic-tenant-deploy.yml'
   workflow_dispatch:
     inputs:
-      tenants:
-        description: 'Specific tenants (comma-separated) or "all"'
-        required: false
-        default: 'all'
-        type: string
       environment:
         description: 'Target environment'
         required: true
@@ -16,14 +16,14 @@ on:
         options:
         - staging
         - production
-      skip_tests:
-        description: 'Skip tests (for emergency deployments)'
-        required: false
-        default: false
-        type: boolean
+      tenants:
+        description: 'Tenants to deploy (comma-separated) or "all"'
+        required: true
+        default: 'all'
+        type: string
       test_mode:
-        description: 'Run in test mode (faster execution)'
-        required: false
+        description: 'Test mode (faster execution)'
+        required: true
         default: true
         type: boolean
 
@@ -67,13 +67,11 @@ jobs:
           echo "📊 Deployment Summary:"
           echo "   Environment: ${{ github.event.inputs.environment }}"
           echo "   Tenant Count: $COUNT"
-          echo "   Skip Tests: ${{ github.event.inputs.skip_tests }}"
           echo "   Test Mode: ${{ github.event.inputs.test_mode }}"
 
   test:
     name: 🧪 Run Tests
     runs-on: ubuntu-latest
-    if: ${{ !inputs.skip_tests }}
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -222,7 +220,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**Total Tenants:** ${{ needs.setup.outputs.deployment_count }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Tests Skipped:** ${{ github.event.inputs.skip_tests }}" >> $GITHUB_STEP_SUMMARY
           echo "**Test Mode:** ${{ github.event.inputs.test_mode }}" >> $GITHUB_STEP_SUMMARY
           echo "**Deployment Time:** $(date)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

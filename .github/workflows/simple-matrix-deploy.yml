@@ -77,7 +77,23 @@ jobs:
       - name: 🏗️ Build application
         run: npm run build
       
-      - name: � Configure deployment environment
+      - name: 🔧 Check if deployment should proceed
+        id: should-deploy
+        run: |
+          # Check if we should deploy based on environment override
+          if [ "${{ github.event.inputs.deploy_environment }}" = "auto" ] || [ "${{ github.event.inputs.deploy_environment }}" = "" ]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "🎯 Auto mode: deploying to ${{ matrix.environment }}"
+          elif [ "${{ github.event.inputs.deploy_environment }}" = "${{ matrix.environment }}" ]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+            echo "🎯 Environment match: deploying to ${{ matrix.environment }}"
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping: ${{ matrix.environment }} doesn't match override ${{ github.event.inputs.deploy_environment }}"
+          fi
+      
+      - name: 🔧 Configure deployment environment
+        if: steps.should-deploy.outputs.should_deploy == 'true'
         id: deploy-config
         run: |
           if [ "${{ github.event.inputs.deploy_environment }}" = "auto" ] || [ "${{ github.event.inputs.deploy_environment }}" = "" ]; then
@@ -91,6 +107,7 @@ jobs:
           echo "🧪 Test mode enabled: ${{ github.event.inputs.test_mode }}"
       
       - name: 🚀 Deploy to ${{ matrix.tenant }} - ${{ steps.deploy-config.outputs.deployment_env }}
+        if: steps.should-deploy.outputs.should_deploy == 'true'
         run: |
           echo "🏗️ Deploying to tenant: ${{ matrix.tenant }}"
           echo "🌍 Environment: ${{ steps.deploy-config.outputs.deployment_env }}"
@@ -128,6 +145,7 @@ jobs:
           API_URL: https://api.${{ matrix.tenant }}.com
       
       - name: 🔍 Post-deployment verification
+        if: steps.should-deploy.outputs.should_deploy == 'true'
         run: |
           echo "🔍 Running health checks for ${{ matrix.tenant }}..."
           

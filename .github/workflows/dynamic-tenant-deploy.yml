@@ -1,11 +1,6 @@
 name: 🎯 Multi-Tenant Deploy (Dynamic Selection)
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'src/**'
-      - '.github/workflows/dynamic-tenant-deploy.yml'
   workflow_dispatch:
     inputs:
       environment:
@@ -50,9 +45,8 @@ jobs:
           else
             echo "🎯 Deploying to specific tenants: ${{ github.event.inputs.tenants }}"
             # Create filtered tenant list based on input
-            INPUT_TENANTS="${{ github.event.inputs.tenants }}"
             # Clean up the input - remove brackets, spaces, and split by comma
-            CLEAN_INPUT=$(echo "$INPUT_TENANTS" | tr -d '[]' | tr -d ' ')
+            CLEAN_INPUT=$(echo "${{ github.event.inputs.tenants }}" | tr -d '[]' | tr -d ' ')
             IFS=',' read -ra TENANT_ARRAY <<< "$CLEAN_INPUT"
             
             # Start with empty include array
@@ -84,13 +78,6 @@ jobs:
           
           # Count the final tenant list
           COUNT=$(echo "$TENANTS" | jq '.include | length')
-          
-          # Ensure we have at least one tenant
-          if [ "$COUNT" -eq 0 ]; then
-            echo "❌ Error: No valid tenants found for deployment"
-            echo "Available tenants: $(echo "$BASE_TENANTS" | jq -r '.include[].name' | tr '\n' ' ')"
-            exit 1
-          fi
           
           # Compact the JSON for output
           TENANTS_COMPACT=$(echo "$TENANTS" | jq -c .)
